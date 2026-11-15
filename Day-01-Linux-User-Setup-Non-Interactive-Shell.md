@@ -1,13 +1,6 @@
 
 # Day 1: Linux User Setup with Non-Interactive Shell
 
-**Date:** 10 November 2026  
-**Category:** Linux Administration & User Management  
-**Platform:** KodeKloud - Stratos Datacenter  
-**Topic:** Linux Users and Non-Interactive Shells
-
----
-
 ## 1. What is a Linux User?
 
 Linux is a multi-user operating system. This means multiple users can access and use the same system with different permissions.
