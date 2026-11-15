@@ -1,428 +1,396 @@
-1. What is SELinux?
+## 1. What is SELinux?
 
-SELinux = Security-Enhanced Linux
+**SELinux = Security-Enhanced Linux**
 
-SELinux is a Linux security mechanism that provides Mandatory Access Control (MAC).
+SELinux is a Linux security mechanism that provides **Mandatory Access Control (MAC)**.
 
 In simple words, SELinux controls what a process is allowed to access, even when normal Linux permissions allow that access.
 
-Why do we need SELinux?
+### Why do we need SELinux?
 
 Imagine:
 
-An Apache web server gets compromised.
+- An Apache web server gets compromised.
+- An attacker tries to access sensitive system files.
+- Normal Linux permissions might allow some access.
+- SELinux can block that access based on its security policy.
 
-An attacker tries to access sensitive system files.
+**Remember:**
 
-Normal Linux permissions might allow some access.
-
-SELinux can block that access based on its security policy.
-
-Remember:
-
-Linux permissions = Who can access a file?
-
-SELinux = Is this process allowed to access this resource?
+- Linux permissions = Who can access a file?
+- SELinux = Is this process allowed to access this resource?
 
 Both security layers work together.
 
-2. DAC vs MAC
+---
 
-DAC
+## 2. DAC vs MAC
 
-MAC
+| DAC | MAC |
+|---|---|
+| Discretionary Access Control | Mandatory Access Control |
+| Traditional Linux permissions | SELinux security policies |
+| Uses `chmod`, `chown` | Uses security contexts and policies |
+| Based on users and groups | Based on process/resource labels and policy |
 
-Discretionary Access Control
+**Memory trick:** DAC = Permissions. MAC = Policy.
 
-Mandatory Access Control
+---
 
-Traditional Linux permissions
+## 3. Three SELinux Modes
 
-SELinux security policies
+| Mode | Behaviour |
+|---|---|
+| Enforcing | Blocks policy violations and logs them |
+| Permissive | Allows actions but logs policy violations |
+| Disabled | SELinux is turned off |
 
-Uses chmod, chown
+### Important commands
 
-Uses security contexts and policies
+**Check current SELinux mode:**
 
-Based on users and groups
-
-Based on process/resource labels and policy
-
-Memory trick: DAC = Permissions. MAC = Policy.
-
-3. Three SELinux Modes
-
-Mode
-
-Behaviour
-
-Enforcing
-
-Blocks policy violations and logs them
-
-Permissive
-
-Allows actions but logs policy violations
-
-Disabled
-
-SELinux is turned off
-
-Important commands
-
-Check current mode:
-
+```bash
 getenforce
+```
 
-Show detailed SELinux status:
+**Show detailed SELinux status:**
 
+```bash
 sestatus
+```
 
-Temporarily change to Permissive:
+**Temporarily change to Permissive mode:**
 
+```bash
 sudo setenforce 0
+```
 
-Temporarily change to Enforcing:
+**Temporarily change to Enforcing mode:**
 
+```bash
 sudo setenforce 1
+```
 
-Memory trick:
+### Memory trick
 
-0 = Permissive
+- `0` = Permissive
+- `1` = Enforcing
 
-1 = Enforcing
+These commands change the running mode, not the persistent boot configuration.
 
-These commands change the running mode, not the persistent boot configuration. setenforce works when SELinux is enabled and currently in Enforcing or Permissive mode.
+---
 
-4. SELinux Security Contexts
+## 4. SELinux Security Contexts
 
 SELinux attaches security labels to files, directories and processes.
 
 Example:
 
+```text
 system_u:object_r:httpd_sys_content_t:s0
+```
 
 There are four fields:
 
-Field
+| Field | Meaning |
+|---|---|
+| `system_u` | SELinux user |
+| `object_r` | SELinux role |
+| `httpd_sys_content_t` | SELinux type |
+| `s0` | Security sensitivity level |
 
-Meaning
-
-system_u
-
-SELinux user
-
-object_r
-
-SELinux role
-
-httpd_sys_content_t
-
-SELinux type
-
-s0
-
-Security sensitivity level
-
-Understanding SELinux Type
+### Most Important: SELinux Type
 
 Example:
 
-httpd_sys_content_t
+`httpd_sys_content_t`
 
-httpd = HTTP daemon / web server
-
-sys_content = Web content
-
-_t = Type
+- `httpd` = HTTP daemon / web server
+- `sys_content` = Web content
+- `_t` = Type
 
 This type is commonly used for files that web servers can read.
 
-For example, Apache may be allowed to read a file with the correct web-content label but blocked from reading a file with an unsuitable label.
+**Example:**
 
-What is s0?
+Apache may be allowed to read a file with the correct web-content label, but blocked from reading a file with an unsuitable label.
 
-Represents a security sensitivity level.
+### What is `s0`?
 
-Used in SELinux security-level mechanisms such as MLS.
+- Represents a security sensitivity level.
+- Used in SELinux security-level mechanisms such as MLS.
+- It is not a Linux permission.
+- Basic SELinux configurations commonly use `s0`.
 
-It is not a Linux permission.
+**Remember:** Type identifies the resource category used in policy decisions. `s0` represents its security level.
 
-Basic SELinux configurations commonly use s0.
+---
 
-Remember: Type identifies the resource category used in policy decisions. s0 represents its security level.
+## 5. SELinux Configuration File
 
-5. SELinux Configuration File
+**Main configuration file:**
 
-Main configuration file:
-
+```bash
 /etc/selinux/config
+```
 
-Why is this file important?
+### Why is this file important?
 
 It stores SELinux settings used during system startup.
 
 Example:
 
+```ini
 SELINUX=enforcing
 SELINUXTYPE=targeted
+```
 
-A. SELINUX
+### A. SELINUX
 
 Controls the intended SELinux operating mode at boot.
 
 Possible values:
 
+```ini
 SELINUX=enforcing
 SELINUX=permissive
 SELINUX=disabled
+```
 
-B. SELINUXTYPE
+### B. SELINUXTYPE
 
 Specifies which SELinux policy to use.
 
 Common setting:
 
+```ini
 SELINUXTYPE=targeted
+```
 
-What is targeted?
+**What is targeted?**
 
 It focuses SELinux restrictions on selected services and processes, rather than applying the same confinement to every process.
 
-Remember the difference
+### Remember the difference
 
-SELINUX = Operating mode.
+- `SELINUX` = Operating mode.
+- `SELINUXTYPE` = Security policy.
 
-SELINUXTYPE = Security policy.
+---
 
-6. Temporary vs Permanent Configuration
+## 6. Temporary vs Permanent Configuration
 
-Temporary configuration
+### Temporary Configuration
 
+```bash
 sudo setenforce 0
+```
 
-Changes the running mode immediately.
+- Changes the running mode immediately.
+- Does not edit the configuration file.
+- Does not survive reboot as a persistent setting.
 
-Does not edit the configuration file.
+### Permanent Configuration
 
-Does not survive reboot as a persistent setting.
+Edit the configuration file:
 
-Permanent configuration
-
-Edit:
-
+```bash
 sudo nano /etc/selinux/config
+```
 
 Change:
 
+```ini
 SELINUX=enforcing
+```
 
 To:
 
+```ini
 SELINUX=permissive
+```
 
 Or:
 
+```ini
 SELINUX=disabled
+```
 
 The configuration takes effect during boot.
 
-Important: Switching from Disabled to Enforcing requires additional preparation and may require filesystem relabeling. Never casually disable SELinux on production servers.
+**Important:** Switching from Disabled to Enforcing requires additional preparation and may require filesystem relabeling. Never casually disable SELinux on production servers.
 
-7. Important SELinux Commands
+---
 
-Command
+## 7. Important SELinux Commands
 
-Purpose
+| Command | Purpose |
+|---|---|
+| `getenforce` | Shows current mode |
+| `sestatus` | Displays detailed SELinux status |
+| `setenforce 0` | Switches to Permissive |
+| `setenforce 1` | Switches to Enforcing |
+| `ls -Z` | Displays file security contexts |
+| `ps -Z` | Displays process security contexts |
+| `restorecon` | Restores default file contexts |
+| `semanage` | Manages SELinux policy settings and labels |
 
-getenforce
+---
 
-Shows current mode
+# 8. Practical Lab: SELinux Installation and Configuration
 
-sestatus
+## Task Requirements
 
-Detailed SELinux status
+On App Server 1 (`stapp01`):
 
-setenforce 0
+1. Install required SELinux packages.
+2. Permanently disable SELinux.
+3. Do not reboot the server.
+4. Final status after reboot should be Disabled.
 
-Switches to Permissive
-
-setenforce 1
-
-Switches to Enforcing
-
-ls -Z
-
-Displays file security contexts
-
-ps -Z
-
-Displays process security contexts
-
-restorecon
-
-Restores default file contexts
-
-semanage
-
-Manages SELinux policy settings and labels
-
-8. Practical Lab — SELinux Installation and Configuration
-
-Task requirements
-
-On App Server 1 (stapp01):
-
-Install required SELinux packages.
-
-Permanently disable SELinux.
-
-Do not reboot the server.
-
-Final status after reboot should be Disabled.
-
-Step 1: Connect to App Server 1
+### Step 1: Connect to App Server 1
 
 From the Jump Host:
 
+```bash
 ssh tony@stapp01
+```
 
-Step 2: Identify the operating system
+### Step 2: Identify the Operating System
 
+```bash
 cat /etc/os-release
+```
 
 Our server was running:
 
+```text
 CentOS Stream 9
+```
 
-Since it is CentOS Stream 9, we use dnf for package installation.
+Since it is CentOS Stream 9, we use `dnf` for package installation.
 
-Step 3: Install required packages
+### Step 3: Install Required Packages
 
+```bash
 sudo dnf install -y policycoreutils selinux-policy selinux-policy-targeted
+```
 
-Package purposes:
+**Package purposes:**
 
-policycoreutils — SELinux management utilities.
+- `policycoreutils` - SELinux management utilities.
+- `selinux-policy` - Base SELinux policies.
+- `selinux-policy-targeted` - Targeted policy package.
 
-selinux-policy — Base SELinux policies.
+### Step 4: Verify Package Installation
 
-selinux-policy-targeted — Targeted policy package.
-
-Step 4: Verify package installation
-
+```bash
 rpm -q policycoreutils selinux-policy selinux-policy-targeted
+```
 
-Our output confirmed all three packages were installed:
+**Our output:**
 
+```text
 policycoreutils-3.6-9.el9.x86_64
 selinux-policy-38.1.87-1.el9.noarch
 selinux-policy-targeted-38.1.87-1.el9.noarch
+```
 
-Step 5: Edit SELinux configuration
+All three packages were successfully installed.
 
+### Step 5: Edit SELinux Configuration
+
+```bash
 sudo nano /etc/selinux/config
+```
 
 Set:
 
+```ini
 SELINUX=disabled
+```
 
 We used Nano instead of Vi to edit the configuration.
 
-Step 6: Verify configuration
+### Step 6: Verify Configuration
 
+```bash
 grep '^SELINUX=' /etc/selinux/config
+```
 
-Our output:
+**Our output:**
 
+```text
 SELINUX=disabled
+```
 
 This confirmed that the persistent configuration was updated.
 
-Step 7: Check SELinux status
+### Step 7: Check SELinux Status
 
+```bash
 sestatus
+```
 
-Our output:
+**Our output:**
 
+```text
 SELinux status: disabled
+```
 
-Final result
+### Final Result
 
 All task requirements were satisfied:
 
-SELinux packages installed.
+- SELinux packages installed.
+- Persistent configuration set to Disabled.
+- No reboot performed.
+- Current SELinux status showed Disabled.
 
-Persistent configuration set to Disabled.
+**Note:** The task required the final status after reboot to be Disabled. The configuration file was the important confirmation for that requirement. In our lab, the current status was also already Disabled.
 
-No reboot performed.
+---
 
-Current SELinux status showed Disabled.
+# 9. Five Things You Must Remember
 
-Note: The task required the final status after reboot to be Disabled. The configuration file was the important confirmation for that requirement. In our lab, the current status was also already Disabled.
+1. SELinux adds another security layer on top of traditional Linux permissions.
+2. Enforcing blocks, Permissive logs, Disabled turns SELinux off.
+3. Security contexts label resources and processes.
+4. `SELINUX` specifies the mode; `SELINUXTYPE` specifies the policy.
+5. `setenforce` changes the running mode; `/etc/selinux/config` controls the intended boot configuration.
 
-9. Five Things You Must Remember
+---
 
-SELinux adds another security layer on top of traditional Linux permissions.
-
-Enforcing blocks, Permissive logs, Disabled turns SELinux off.
-
-Security contexts label resources and processes.
-
-SELINUX specifies the mode; SELINUXTYPE specifies the policy.
-
-setenforce changes the running mode; /etc/selinux/config controls the intended boot configuration.
-
-10. Quick Revision Questions
+# 10. Quick Revision Questions
 
 Try answering these without looking at the notes:
 
-What is SELinux?
+1. What is SELinux?
+2. What is the difference between DAC and MAC?
+3. What is the difference between Enforcing and Permissive?
+4. What does `setenforce 0` do?
+5. What is the purpose of `httpd_sys_content_t`?
+6. What does `s0` represent?
+7. Where is the SELinux configuration file?
+8. What is the difference between `SELINUX` and `SELINUXTYPE`?
+9. Which command displays the current SELinux mode?
+10. Why did we not need to reboot immediately after changing the persistent configuration?
 
-What is the difference between DAC and MAC?
+---
 
-What is the difference between Enforcing and Permissive?
+## Final Memory Trick
 
-What does setenforce 0 do?
+| Command / File | Remember it as |
+|---|---|
+| `getenforce` | Current mode |
+| `setenforce` | Change running mode |
+| `/etc/selinux/config` | Boot configuration |
+| `ls -Z` | File security labels |
+| `sestatus` | Detailed status |
+| `rpm -q` | Verify installed packages |
 
-What is the purpose of httpd_sys_content_t?
+---
 
-What does s0 represent?
+**Day 5 Completed - SELinux Installation and Configuration.**
 
-Where is the SELinux configuration file?
-
-What is the difference between SELINUX and SELINUXTYPE?
-
-Which command displays the current SELinux mode?
-
-Why did we not need to reboot immediately after changing the persistent configuration?
-
-Final Memory Trick
-
-Command / File
-
-Remember it as
-
-getenforce
-
-Current mode
-
-setenforce
-
-Change running mode
-
-/etc/selinux/config
-
-Boot configuration
-
-ls -Z
-
-File security labels
-
-sestatus
-
-Detailed status
-
-rpm -q
-
-Verify installed packages
+**Next Topic: Day 6 - Create a Cron Job.**
